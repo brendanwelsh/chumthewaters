@@ -53,15 +53,15 @@ body {
 #shark {
   position: absolute;
   margin: 0;
-  font-size: 14px;
-  line-height: 14px;
+  font-size: clamp(6px, 1.5vw, 12px);
+  line-height: 0.92;                 /* matches the source's tight cell (~11/12) */
   letter-spacing: 0;
   white-space: pre;
+  font-family: ui-monospace, "Cascadia Code", "DejaVu Sans Mono", Menlo, Consolas, monospace;
   color: var(--shark);
-  opacity: 0.85;
-  transform-origin: 50% 50%;
-  text-shadow: 0 0 12px rgba(111,211,255,0.30);
-  will-change: left, top, transform;
+  opacity: 0.96;
+  text-shadow: 0 0 8px rgba(111,211,255,0.30);
+  will-change: left, top;
 }
 
 /* a puff of chum where you click */

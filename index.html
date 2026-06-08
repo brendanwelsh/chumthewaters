@@ -4,14 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>~chumthewaters · tilde.town</title>
-  <meta name="description" content="~chumthewaters on tilde.town — a little ASCII shark that swims around and chases your cursor.">
+  <meta name="description" content="~chumthewaters on tilde.town — a dense ASCII shark that swims the deep and chases your cursor.">
   <meta name="color-scheme" content="dark">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <a class="skip" href="#main">skip to content</a>
 
-  <!-- the tank: a decorative ASCII shark that swims + follows the cursor -->
+  <!-- the tank: a decorative ASCII shark that swims, turns to face its heading, and follows the cursor -->
   <div id="tank" aria-hidden="true"><pre id="shark"></pre></div>
 
   <main id="main">
@@ -37,63 +37,58 @@
     <p class="home">adrift on <a href="https://tilde.town">tilde.town</a> <span aria-hidden="true">🌊</span> — a tiny, friendly pubnix.</p>
   </footer>
 
+  <!-- Shark ASCII frames adapted from "Ascii Shark" by Kitty (meowinglion),
+       Wallpaper Engine Workshop #3606705311. 12 headings x 16 swim frames. -->
+  <script src="shark-frames.js"></script>
   <script>
   (function () {
     "use strict";
 
-    // ---- the shark: one sprite, two swim frames (the tail flicks) ----
-    var FRAME_A = [
-      "        ^",
-      "       / \\",
-      "   ___/   \\_____________",
-      "  /                   o  \\",
-      " <__                       >",
-      "  \\  \\___             ___/",
-      "   \\     \\___________/",
-      "    \\___/"
-    ].join("\n");
-
-    var FRAME_B = [
-      "        ^",
-      "       / \\",
-      "   ___/   \\_____________",
-      "  /                   o  \\",
-      " <__                       >",
-      "  \\     ___           ___/",
-      "   \\___/   \\_________/",
-      "       \\_/"
-    ].join("\n");
-
+    var data = window.SHARK_DATA;
     var shark = document.getElementById("shark");
+    var tank  = document.getElementById("tank");
+    if (!data || !shark) { return; }
+
+    var ANGLES = data.angles;            // [0,30,...,330]
+    var FRAMES = data.frames;            // { "0": [...], ... }
+    var STEP   = 360 / ANGLES.length;    // 30
     var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     var W = window.innerWidth, H = window.innerHeight;
-    var pos = { x: W * 0.5, y: H * 0.45 };
+    var pos = { x: W * 0.5, y: H * 0.55 };
     var target = { x: pos.x, y: pos.y };
-    var vx = 0, vy = 0;
-    var facing = "rotate(0deg)";
-    var tick = 0, flip = 0, dart = 0;
+    var vx = -1, vy = 0;
+    var heading = 180;                   // current displayed heading (deg)
+    var swim = 0, tick = 0, dart = 0;
     var mouse = { x: pos.x, y: pos.y, fresh: false, t: 0 };
 
     function clock() { return performance.now(); }
 
-    shark.textContent = FRAME_A;
+    // heading -> nearest baked angle (frames are pre-rotated, so no CSS rotation)
+    function frameFor(h) {
+      var idx = Math.round(((h % 360) + 360) % 360 / STEP) % ANGLES.length;
+      var arr = FRAMES[ANGLES[idx]];
+      return arr[swim % arr.length];
+    }
 
     function place() {
       shark.style.left = (pos.x - shark.offsetWidth / 2) + "px";
       shark.style.top  = (pos.y - shark.offsetHeight / 2) + "px";
-      shark.style.transform = facing;
     }
 
-    window.addEventListener("resize", function () {
-      W = window.innerWidth; H = window.innerHeight;
-    });
+    window.addEventListener("resize", function () { W = window.innerWidth; H = window.innerHeight; });
 
-    // Reduced motion: park a still shark, no swimming, no listeners.
-    if (reduce) { pos.x = W * 0.5; pos.y = H * 0.4; place(); return; }
+    // Reduced motion: one still frame, no swimming, no listeners.
+    if (reduce) {
+      shark.textContent = FRAMES[ANGLES[Math.floor(ANGLES.length / 2)]][0];
+      pos.x = W * 0.5; pos.y = H * 0.5; place();
+      return;
+    }
+
+    shark.textContent = frameFor(heading);
 
     function wander() {
-      var m = 90;
+      var m = 120;
       target.x = m + Math.random() * (W - 2 * m);
       target.y = m + Math.random() * (H - 2 * m);
     }
@@ -104,54 +99,51 @@
     }, { passive: true });
 
     document.addEventListener("click", function (e) {
-      // toss chum: the shark darts to the click, with a little ripple
-      target.x = e.clientX; target.y = e.clientY; dart = 26;
+      target.x = e.clientX; target.y = e.clientY; dart = 30;   // dart to the chum
       ripple(e.clientX, e.clientY);
     });
 
     function ripple(x, y) {
       var r = document.createElement("span");
       r.className = "chum";
-      r.style.left = x + "px";
-      r.style.top = y + "px";
-      document.getElementById("tank").appendChild(r);
+      r.style.left = x + "px"; r.style.top = y + "px";
+      tank.appendChild(r);
       setTimeout(function () { r.remove(); }, 900);
     }
 
     function step() {
-      var following = mouse.fresh && (clock() - mouse.t < 2200);
+      var following = mouse.fresh && (clock() - mouse.t < 2400);
 
       if (dart > 0) {
-        dart--;                      // keep heading to the clicked spot
+        dart--;
       } else if (following) {
         target.x = mouse.x; target.y = mouse.y;
       } else {
         var tx = target.x - pos.x, ty = target.y - pos.y;
-        if (Math.sqrt(tx * tx + ty * ty) < 70) wander();
+        if (Math.sqrt(tx * tx + ty * ty) < 90) wander();
       }
 
       var dx = target.x - pos.x, dy = target.y - pos.y;
       var dist = Math.sqrt(dx * dx + dy * dy) || 1;
-      var ease = dart > 0 ? 0.09 : (following ? 0.045 : 0.02);
-      var standoff = (following && dart <= 0) ? 72 : 0;  // hover just shy of the cursor
+      var ease = dart > 0 ? 0.08 : (following ? 0.04 : 0.018);
+      var standoff = (following && dart <= 0) ? 110 : 0;   // hover just shy of the cursor
       var move = Math.max(dist - standoff, 0) * ease;
 
-      // smooth the velocity so turns bank instead of snapping
-      vx = vx * 0.78 + (dx / dist) * move * 0.22;
-      vy = vy * 0.78 + (dy / dist) * move * 0.22;
+      // ease velocity so the shark banks through turns instead of snapping
+      vx = vx * 0.82 + (dx / dist) * move * 0.18;
+      vy = vy * 0.82 + (dy / dist) * move * 0.18;
       pos.x += vx; pos.y += vy;
 
+      // turn to face heading (same convention as the source frames)
       var speed = Math.sqrt(vx * vx + vy * vy);
-      if (speed > 0.18) {
-        // belly-down sprite: pitch up/down, mirror to face left
-        var p = Math.atan2(vy, Math.abs(vx)) * 180 / Math.PI;
-        if (p > 55) p = 55; else if (p < -55) p = -55;
-        facing = (vx < 0 ? "scaleX(-1) " : "") + "rotate(" + p.toFixed(1) + "deg)";
+      if (speed > 0.25) {
+        heading = Math.atan2(vy, -vx) * 180 / Math.PI;
+        if (heading < 0) heading += 360;
       }
 
       tick++;
-      if (tick % 9 === 0) { flip ^= 1; shark.textContent = flip ? FRAME_B : FRAME_A; }
-
+      if (tick % 2 === 0) swim++;          // ~30fps tail swim
+      shark.textContent = frameFor(heading);
       place();
       requestAnimationFrame(step);
     }
