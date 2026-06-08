@@ -4,71 +4,161 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>~chumthewaters · tilde.town</title>
-  <meta name="description" content="The deep end of ~chumthewaters on tilde.town — sharks, chum, and a Jaws-sized love of the open web.">
+  <meta name="description" content="~chumthewaters on tilde.town — a little ASCII shark that swims around and chases your cursor.">
   <meta name="color-scheme" content="dark">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <a class="skip" href="#main">skip to content</a>
 
+  <!-- the tank: a decorative ASCII shark that swims + follows the cursor -->
+  <div id="tank" aria-hidden="true"><pre id="shark"></pre></div>
+
   <main id="main">
-    <header class="masthead">
-      <pre class="art" role="img" aria-label="A lone swimmer at the surface while a dorsal fin cuts the water and a shark lurks below.">
-      o/   ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ |\ ~ ~ ~ ~ ~ ~
-     &lt;|   ~~~~~~~~~~~~~~~~~~~~~~~~~~| \~~~~~~~~~~~~~~
-   ~ /_\ ~~~~~~~~~~~~~~~~~~~~~~~~~~~|  \~~~~~~~~~~~~~~
- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                  __
-            _.--''  ''--.__          _
-          .'              ''--.____.' '.
-         (        o                      '.
-          '.__                         _.-'&gt;
-              ''--.____         ____.-''
-                       ''------''
-      </pre>
-      <h1 class="wordmark">~chumthewaters</h1>
-      <p class="dun" aria-hidden="true">dun&nbsp;dun… dun&nbsp;dun… dun-dun-dun-dun-</p>
-      <p class="tagline">you're gonna need a bigger boat.</p>
-    </header>
-
-    <section class="intro" aria-labelledby="hello">
-      <h2 id="hello">don't go in the water <span aria-hidden="true">🦈</span></h2>
-      <p>
-        i'm <strong>chum</strong> — Amity Island's quietest resident, washed up here on
-        <a href="https://tilde.town">tilde.town</a> to tinker, stream, and chum the waters of
-        the open web. this page is hand-poured below the surface: no frameworks, no trackers,
-        no build step. just plain HTML, a little CSS, and a lot of saltwater.
-      </p>
-      <p>
-        i like fast pages, weird little tools, and the kind of internet you make with your own
-        two fins. if something here makes you want to build your own shack on the shore — good.
-        that's the whole point. smile, you son of a&hellip;
-        <span class="chum" aria-hidden="true">•&nbsp;•&nbsp;•</span>
-      </p>
-    </section>
-
-    <section class="links" aria-labelledby="tackle">
-      <h2 id="tackle">the tackle box</h2>
-      <p>i keep my gear — code, scraps, half-finished nets — in one place:</p>
-      <ul class="linklist">
-        <li><a href="https://github.com/brendanwelsh">github.com/brendanwelsh</a> <span class="note">— the workbench</span></li>
-      </ul>
-    </section>
+    <h1>~chumthewaters</h1>
+    <p class="intro">
+      hi — i'm <strong>chum</strong>. i chum the waters of the open web: fast little pages,
+      weird tools, no frameworks. the shark in the water follows your cursor —
+      <span class="hint">click anywhere to toss it some chum.</span> <span aria-hidden="true">🦈</span>
+    </p>
+    <p class="find">
+      tools &amp; tinkering &rarr; <a href="https://github.com/brendanwelsh">github.com/brendanwelsh</a>
+    </p>
   </main>
 
   <footer class="ring">
     <nav class="webring" aria-label="tilde.town webring">
       <span class="tilde" aria-hidden="true">~</span>
-      <a href="https://tilde.town/~">← the docks</a>
+      <a href="https://tilde.town/~">&larr; the docks</a>
       <a href="https://tilde.town/~">a random townie</a>
-      <a href="https://tilde.town/~">drift on →</a>
+      <a href="https://tilde.town/~">drift on &rarr;</a>
       <span class="tilde" aria-hidden="true">~</span>
     </nav>
-    <p class="home">
-      adrift on <a href="https://tilde.town">tilde.town</a>
-      <span aria-hidden="true">🌊</span> — a friendly little pubnix. Amity Island, pop. you + the shark.
-    </p>
-    <p class="fed"><small>last chummed the waters: 2026-06-08</small></p>
+    <p class="home">adrift on <a href="https://tilde.town">tilde.town</a> <span aria-hidden="true">🌊</span> — a tiny, friendly pubnix.</p>
   </footer>
+
+  <script>
+  (function () {
+    "use strict";
+
+    // ---- the shark: one sprite, two swim frames (the tail flicks) ----
+    var FRAME_A = [
+      "        ^",
+      "       / \\",
+      "   ___/   \\_____________",
+      "  /                   o  \\",
+      " <__                       >",
+      "  \\  \\___             ___/",
+      "   \\     \\___________/",
+      "    \\___/"
+    ].join("\n");
+
+    var FRAME_B = [
+      "        ^",
+      "       / \\",
+      "   ___/   \\_____________",
+      "  /                   o  \\",
+      " <__                       >",
+      "  \\     ___           ___/",
+      "   \\___/   \\_________/",
+      "       \\_/"
+    ].join("\n");
+
+    var shark = document.getElementById("shark");
+    var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    var W = window.innerWidth, H = window.innerHeight;
+    var pos = { x: W * 0.5, y: H * 0.45 };
+    var target = { x: pos.x, y: pos.y };
+    var vx = 0, vy = 0;
+    var facing = "rotate(0deg)";
+    var tick = 0, flip = 0, dart = 0;
+    var mouse = { x: pos.x, y: pos.y, fresh: false, t: 0 };
+
+    function clock() { return performance.now(); }
+
+    shark.textContent = FRAME_A;
+
+    function place() {
+      shark.style.left = (pos.x - shark.offsetWidth / 2) + "px";
+      shark.style.top  = (pos.y - shark.offsetHeight / 2) + "px";
+      shark.style.transform = facing;
+    }
+
+    window.addEventListener("resize", function () {
+      W = window.innerWidth; H = window.innerHeight;
+    });
+
+    // Reduced motion: park a still shark, no swimming, no listeners.
+    if (reduce) { pos.x = W * 0.5; pos.y = H * 0.4; place(); return; }
+
+    function wander() {
+      var m = 90;
+      target.x = m + Math.random() * (W - 2 * m);
+      target.y = m + Math.random() * (H - 2 * m);
+    }
+    wander();
+
+    document.addEventListener("pointermove", function (e) {
+      mouse.x = e.clientX; mouse.y = e.clientY; mouse.fresh = true; mouse.t = clock();
+    }, { passive: true });
+
+    document.addEventListener("click", function (e) {
+      // toss chum: the shark darts to the click, with a little ripple
+      target.x = e.clientX; target.y = e.clientY; dart = 26;
+      ripple(e.clientX, e.clientY);
+    });
+
+    function ripple(x, y) {
+      var r = document.createElement("span");
+      r.className = "chum";
+      r.style.left = x + "px";
+      r.style.top = y + "px";
+      document.getElementById("tank").appendChild(r);
+      setTimeout(function () { r.remove(); }, 900);
+    }
+
+    function step() {
+      var following = mouse.fresh && (clock() - mouse.t < 2200);
+
+      if (dart > 0) {
+        dart--;                      // keep heading to the clicked spot
+      } else if (following) {
+        target.x = mouse.x; target.y = mouse.y;
+      } else {
+        var tx = target.x - pos.x, ty = target.y - pos.y;
+        if (Math.sqrt(tx * tx + ty * ty) < 70) wander();
+      }
+
+      var dx = target.x - pos.x, dy = target.y - pos.y;
+      var dist = Math.sqrt(dx * dx + dy * dy) || 1;
+      var ease = dart > 0 ? 0.09 : (following ? 0.045 : 0.02);
+      var standoff = (following && dart <= 0) ? 72 : 0;  // hover just shy of the cursor
+      var move = Math.max(dist - standoff, 0) * ease;
+
+      // smooth the velocity so turns bank instead of snapping
+      vx = vx * 0.78 + (dx / dist) * move * 0.22;
+      vy = vy * 0.78 + (dy / dist) * move * 0.22;
+      pos.x += vx; pos.y += vy;
+
+      var speed = Math.sqrt(vx * vx + vy * vy);
+      if (speed > 0.18) {
+        // belly-down sprite: pitch up/down, mirror to face left
+        var p = Math.atan2(vy, Math.abs(vx)) * 180 / Math.PI;
+        if (p > 55) p = 55; else if (p < -55) p = -55;
+        facing = (vx < 0 ? "scaleX(-1) " : "") + "rotate(" + p.toFixed(1) + "deg)";
+      }
+
+      tick++;
+      if (tick % 9 === 0) { flip ^= 1; shark.textContent = flip ? FRAME_B : FRAME_A; }
+
+      place();
+      requestAnimationFrame(step);
+    }
+
+    place();
+    requestAnimationFrame(step);
+  })();
+  </script>
 </body>
 </html>
