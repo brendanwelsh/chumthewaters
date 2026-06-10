@@ -3,6 +3,8 @@
 A dense **ASCII shark** that swims the deep, turns to face where it's heading, and chases your
 cursor — click to toss it chum. The "chum the waters" mascot, as a tiny self-contained web animation.
 
+**▶ [Live demo](https://brendanwelsh.github.io/chumthewaters/)** — runs right in the browser, no install.
+
 - **Stack:** vanilla HTML + CSS + a little plain JS — no frameworks, no build step.
 - **Files:** `index.html` (markup + shark sim), `style.css`, and `shark-frames.js` (the ASCII frame data).
 
