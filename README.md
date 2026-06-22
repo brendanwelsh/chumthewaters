@@ -1,7 +1,14 @@
-# chumthewaters — ASCII shark
+# chumthewaters
 
-A dense **ASCII shark** that swims the deep, turns to face where it's heading, and chases your
-cursor — click to toss it chum. The "chum the waters" mascot, as a tiny self-contained web animation.
+> A dense **ASCII shark** that swims the deep, turns to face where it's heading, and chases your
+> cursor — click to toss it chum. The "chum the waters" mascot, as a tiny self-contained web animation.
+
+**▶ [Live demo](https://brendanwelsh.github.io/chumthewaters/)** — runs right in the browser, no install.
+
+## What it is
+
+The "chum the waters" mascot as a tiny, self-contained web animation: a dense ASCII shark that swims,
+steers to face its heading, and chases the cursor.
 
 - **Stack:** vanilla HTML + CSS + a little plain JS — no frameworks, no build step.
 - **Files:** `index.html` (markup + shark sim), `style.css`, and `shark-frames.js` (the ASCII frame data).
@@ -18,5 +25,5 @@ scp index.html style.css shark-frames.js user@host:~/public_html/
 
 The swimming shark's ASCII frames are adapted from **"Ascii Shark"** by **Kitty (`meowinglion`)** —
 [Wallpaper Engine Workshop #3606705311](https://steamcommunity.com/sharedfiles/filedetails/?id=3606705311).
-The frame data is cropped to a subset (12 headings x 16 swim frames) and re-serialized for the web; the
+The frame data is cropped to a subset (12 headings × 16 swim frames) and re-serialized for the web; the
 swim / steer / cursor-chase behaviour is a fresh vanilla-JS reimplementation.
